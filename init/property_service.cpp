@@ -168,6 +168,15 @@ static uint32_t PropertySet(const std::string& name, const std::string& value, s
         WritePersistentProperty(name, value);
     }
     property_changed(name, value);
+
+    // MTK add log
+    if (!(android::base::StartsWith(name, "ro.") ||
+          android::base::StartsWith(name, "persist.log.tag") ||
+          android::base::StartsWith(name, "vendor.debug.mtk.aee") ||
+          android::base::StartsWith(name, "init.svc."))) {
+        LOG(INFO) << "PropSet [" << name << "]=[" << value << "] Done";
+    }
+
     return PROP_SUCCESS;
 }
 
@@ -560,7 +569,7 @@ static void handle_property_set_fd() {
     }
 }
 
-static bool load_properties_from_file(const char *, const char *);
+//static bool load_properties_from_file(const char *, const char *);
 
 /*
  * Filter is used to decide which properties to load: NULL loads all keys,
@@ -646,7 +655,7 @@ static void LoadProperties(char* data, const char* filter, const char* filename)
 
 // Filter is used to decide which properties to load: NULL loads all keys,
 // "ro.foo.*" is a prefix match, and "ro.foo.bar" is an exact match.
-static bool load_properties_from_file(const char* filename, const char* filter) {
+bool load_properties_from_file(const char* filename, const char* filter) {
     Timer t;
     auto file_contents = ReadFile(filename);
     if (!file_contents) {
@@ -716,6 +725,7 @@ void load_persist_props(void) {
     }
 
     load_override_properties();
+    LoadRscRwProps();
     /* Read persistent properties after all default values have been loaded. */
     auto persistent_properties = LoadPersistentProperties();
     for (const auto& persistent_property_record : persistent_properties.properties()) {
